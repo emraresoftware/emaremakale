@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — Makale Üretici{% endblock %}
+
+{% block content %}
+<section class="py-12 lg:py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Üst Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+            <a href="{{ url_for('articles_list') }}"
+               class="px-5 py-2.5 rounded-xl text-sm font-semibold text-brand-700 border-2 border-brand-200 hover:border-brand-500 hover:bg-brand-50 transition-all duration-300">
+                <i class="fas fa-arrow-left mr-1.5"></i> Geri Dön
+            </a>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="copyArticle()"
+                        class="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50 transition-all duration-300">
+                    <i class="fas fa-copy mr-1"></i> Kopyala
+                </button>
+                <a href="{{ url_for('download_article', article_id=article.id) }}"
+                   class="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:border-green-300 hover:text-green-600 hover:bg-green-50 transition-all duration-300">
+                    <i class="fas fa-download mr-1"></i> İndir
+                </a>
+                {% if article.is_published %}
+                {% set share_url = url_for('shared_article', slug=article.share_slug, _external=True) %}
+                <button onclick="shareArticle('{{ share_url }}')"
+                        class="px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                    <i class="fas fa-share-nodes mr-1"></i> Paylaş
+                </button>
+                {% else %}
+                <form action="{{ url_for('publish_article', article_id=article.id) }}" method="POST" class="inline">
+                    <button type="submit"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                        <i class="fas fa-globe mr-1"></i> Yayınla
+                    </button>
+                </form>
+                {% endif %}
+                <form action="{{ url_for('delete_article', article_id=article.id) }}" method="POST" class="inline"
+                      onsubmit="return confirm('Bu makaleyi silmek istediğinize emin misiniz?')">
+                    <button type="submit"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 hover:border-red-400 transition-all duration-300">
+                        <i class="fas fa-trash-alt mr-1"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Article Card -->
+        <article class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden">
+            <!-- Article Header -->
+            <div class="p-8 lg:p-10 pb-0 lg:pb-0">
+                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-4">{{ article.title }}</h1>
+
+                <!-- Meta -->
+                <div class="flex flex-wrap items-center gap-3 mb-4 pb-6 border-b border-gray-100">
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-brand-500 to-purple-600 text-white">
+                        <i class="fas fa-tag mr-1"></i> {{ article.topic }}
+                    </span>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        <i class="fas fa-microphone mr-1"></i> {{ article.tone }}
+                    </span>
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-calendar mr-1"></i> {{ article.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    </span>
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-font mr-1"></i> {{ article.word_count }} kelime
+                    </span>
+                    {% if article.is_published %}
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <i class="fas fa-globe mr-1"></i> Yayında
+                    </span>
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-eye mr-1"></i> {{ article.view_count }} görüntülenme
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if article.keywords %}
+                <div class="flex flex-wrap gap-2 mb-6">
+                    {% for kw in article.keywords.split(',') %}
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-100">
+                        #{{ kw.strip() }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Article Content -->
+            <div class="px-8 lg:px-10 pb-10 article-content" id="articleContent">
+                {{ article_html | safe }}
+            </div>
+        </article>
+
+        <!-- Share Section -->
+        {% if article.is_published %}
+        <div class="mt-6 bg-white rounded-3xl p-8 border border-gray-100 shadow-lg shadow-gray-100/50">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">
+                <i class="fas fa-share-nodes text-brand-500 mr-2"></i> Paylaşım Linkleri
+            </h3>
+
+            <!-- Share URL -->
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="shareUrl" readonly
+                       value="{{ url_for('shared_article', slug=article.share_slug, _external=True) }}"
+                       class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-600 bg-gray-50 outline-none">
+                <button onclick="copyShareLink()"
+                        class="px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                    <i class="fas fa-copy mr-1"></i> Kopyala
+                </button>
+            </div>
+
+            <!-- Social Share Buttons -->
+            <div class="flex flex-wrap gap-2">
+                <a href="https://twitter.com/intent/tweet?text={{ article.title | urlencode }}&url={{ url_for('shared_article', slug=article.share_slug, _external=True) | urlencode }}"
+                   target="_blank" class="px-4 py-2 rounded-lg text-xs font-medium bg-black text-white hover:bg-gray-800 transition-all">
+                    <i class="fab fa-x-twitter mr-1"></i> Twitter/X
+                </a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ url_for('shared_article', slug=article.share_slug, _external=True) | urlencode }}"
+                   target="_blank" class="px-4 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all">
+                    <i class="fab fa-linkedin-in mr-1"></i> LinkedIn
+                </a>
+                <a href="https://wa.me/?text={{ (article.title ~ ' ' ~ url_for('shared_article', slug=article.share_slug, _external=True)) | urlencode }}"
+                   target="_blank" class="px-4 py-2 rounded-lg text-xs font-medium bg-green-500 text-white hover:bg-green-600 transition-all">
+                    <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                </a>
+                <a href="https://t.me/share/url?url={{ url_for('shared_article', slug=article.share_slug, _external=True) | urlencode }}&text={{ article.title | urlencode }}"
+                   target="_blank" class="px-4 py-2 rounded-lg text-xs font-medium bg-sky-500 text-white hover:bg-sky-600 transition-all">
+                    <i class="fab fa-telegram mr-1"></i> Telegram
+                </a>
+                <a href="mailto:?subject={{ article.title | urlencode }}&body={{ url_for('shared_article', slug=article.share_slug, _external=True) | urlencode }}"
+                   class="px-4 py-2 rounded-lg text-xs font-medium bg-gray-700 text-white hover:bg-gray-800 transition-all">
+                    <i class="fas fa-envelope mr-1"></i> E-posta
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyArticle() {
+    const content = document.getElementById('articleContent').innerText;
+    navigator.clipboard.writeText(content).then(() => showToast('Makale panoya kopyalandı!'));
+}
+function copyShareLink() {
+    const url = document.getElementById('shareUrl').value;
+    navigator.clipboard.writeText(url).then(() => showToast('Paylaşım linki kopyalandı!'));
+}
+function shareArticle(url) {
+    if (navigator.share) {
+        navigator.share({ title: '{{ article.title }}', url: url });
+    } else {
+        navigator.clipboard.writeText(url).then(() => showToast('Paylaşım linki kopyalandı!'));
+    }
+}
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'fixed bottom-6 right-6 z-50 px-6 py-3 rounded-xl bg-green-500 text-white text-sm font-medium shadow-xl transition-all duration-300';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+</script>
+{% endblock %}

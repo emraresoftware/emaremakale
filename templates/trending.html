@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}Trend İçerikler — Makale Üretici{% endblock %}
+
+{% block content %}
+<!-- ===== HERO ===== -->
+<section class="relative overflow-hidden py-16 lg:py-20"
+         style="background: linear-gradient(-45deg, #0f0a2e, #1e1b4b, #1e1b4b, #312e81); background-size: 400% 400%; animation: gradient 8s ease infinite;">
+    <div class="absolute inset-0"
+         style="background-image:
+            radial-gradient(at 80% 20%, rgba(99,102,241,0.15) 0px, transparent 50%),
+            radial-gradient(at 20% 80%, rgba(139,92,246,0.1) 0px, transparent 50%);">
+    </div>
+    <div class="absolute top-10 right-10 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl animate-float"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl lg:text-6xl font-extrabold text-white mb-4 animate-fade-up">
+            <i class="fas fa-fire text-orange-400"></i>
+            Trend <span class="bg-gradient-to-r from-orange-300 to-amber-400 bg-clip-text text-transparent">İçerikler</span>
+        </h1>
+        <p class="text-lg text-brand-200/80 max-w-2xl mx-auto animate-fade-up" style="animation-delay: 0.15s;">
+            Dünyanın en popüler forumlarından en yüksek etkileşim almış içerikler — Reddit, Hacker News, Dev.to, GitHub ve daha fazlası.
+        </p>
+    </div>
+</section>
+
+<!-- ===== FILTER / CATEGORY BAR ===== -->
+<section class="py-8 bg-white border-b border-gray-100 sticky top-20 z-40 backdrop-blur-xl bg-white/95">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <form method="GET" action="{{ url_for('trending') }}" class="flex flex-wrap items-center gap-3">
+            {% for cat in categories %}
+            <label class="cursor-pointer">
+                <input type="checkbox" name="category" value="{{ cat }}" class="hidden peer"
+                       {{ 'checked' if cat in selected_cats else '' }}>
+                <span class="inline-block px-4 py-2 rounded-full text-sm font-medium border transition-all duration-300
+                             peer-checked:bg-gradient-to-r peer-checked:from-brand-500 peer-checked:to-purple-600 peer-checked:text-white peer-checked:border-transparent peer-checked:shadow-lg peer-checked:shadow-brand-500/30
+                             bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600">
+                    {% if cat == 'teknoloji' %}<i class="fas fa-microchip mr-1"></i>
+                    {% elif cat == 'bilim' %}<i class="fas fa-flask mr-1"></i>
+                    {% elif cat == 'finans' %}<i class="fas fa-chart-line mr-1"></i>
+                    {% elif cat == 'tasarim' %}<i class="fas fa-palette mr-1"></i>
+                    {% elif cat == 'girisimcilik' %}<i class="fas fa-rocket mr-1"></i>
+                    {% elif cat == 'saglik' %}<i class="fas fa-heart-pulse mr-1"></i>
+                    {% elif cat == 'egitim' %}<i class="fas fa-graduation-cap mr-1"></i>
+                    {% else %}<i class="fas fa-globe mr-1"></i>{% endif %}
+                    {{ cat | capitalize }}
+                </span>
+            </label>
+            {% endfor %}
+            <button type="submit"
+                    class="px-6 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                <i class="fas fa-sync-alt mr-1"></i> Güncelle
+            </button>
+        </form>
+    </div>
+</section>
+
+<!-- ===== CONTENT AREA ===== -->
+<section class="py-12 lg:py-16 bg-gray-50/50"
+         x-data="{ tab: 'all', search: '' }">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Tab Bar -->
+        <div class="flex flex-wrap items-center gap-4 mb-8">
+            <!-- Source Tabs -->
+            <div class="flex items-center gap-1 bg-white rounded-xl p-1 border border-gray-100 shadow-sm overflow-x-auto">
+                <button @click="tab = 'all'"
+                        :class="tab === 'all' ? 'bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-lg' : 'text-gray-600 hover:text-brand-600 hover:bg-brand-50'"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap">
+                    <i class="fas fa-fire mr-1"></i> Hepsi ({{ all_items | length }})
+                </button>
+                {% for source_key, source_data in results.items() %}
+                {% if source_data['items'] is defined and source_data['items'] | length > 0 %}
+                <button @click="tab = '{{ source_key }}'"
+                        :class="tab === '{{ source_key }}' ? 'bg-gradient-to-r from-brand-500 to-purple-600 text-white shadow-lg' : 'text-gray-600 hover:text-brand-600 hover:bg-brand-50'"
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap">
+                    {% if source_key == 'reddit' %}<i class="fab fa-reddit-alien mr-1"></i> Reddit
+                    {% elif source_key == 'hackernews' %}<i class="fab fa-hacker-news mr-1"></i> HN
+                    {% elif source_key == 'devto' %}<i class="fab fa-dev mr-1"></i> Dev.to
+                    {% elif source_key == 'lobsters' %}<i class="fas fa-shrimp mr-1"></i> Lobste.rs
+                    {% elif source_key == 'github' %}<i class="fab fa-github mr-1"></i> GitHub
+                    {% elif source_key == 'lemmy' %}<i class="fas fa-comments mr-1"></i> Lemmy
+                    {% elif source_key == 'producthunt' %}<i class="fab fa-product-hunt mr-1"></i> PH
+                    {% else %}{{ source_key }}{% endif %}
+                    ({{ source_data['items'] | length }})
+                </button>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Search -->
+            <div class="relative flex-1 min-w-[200px]">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" x-model="search" placeholder="İçerik ara..."
+                       class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-300 text-sm text-gray-800">
+            </div>
+        </div>
+
+        <!-- All Items View -->
+        <div x-show="tab === 'all'" class="space-y-4">
+            {% for item in all_items %}
+            <div x-show="search === '' || '{{ item.title | lower | replace("'", "") }}'.includes(search.toLowerCase())"
+                 x-transition
+                 class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-lg shadow-gray-100/50 hover:shadow-xl hover:border-brand-200 transition-all duration-500">
+                <div class="flex items-start gap-4">
+                    <!-- Engagement Score -->
+                    <div class="hidden sm:flex flex-col items-center justify-center min-w-[60px] py-2">
+                        <span class="text-2xl font-extrabold bg-gradient-to-b from-brand-500 to-purple-600 bg-clip-text text-transparent">
+                            {% if item.engagement >= 1000 %}{{ (item.engagement / 1000) | round(1) }}k{% else %}{{ item.engagement }}{% endif %}
+                        </span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-wider">Etkileşim</span>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span class="inline-flex items-center text-xs font-medium {{ item.source_color }}">
+                                <i class="{{ item.source_icon }} mr-1"></i> {{ item.source }}
+                            </span>
+                            {% if item.subreddit %}
+                            <span class="text-xs text-gray-400">{{ item.subreddit }}</span>
+                            {% endif %}
+                            {% if item.category %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-brand-50 text-brand-600">{{ item.category }}</span>
+                            {% endif %}
+                        </div>
+
+                        <a href="{{ item.external_url or item.url }}" target="_blank" rel="noopener"
+                           class="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors line-clamp-2 block">
+                            {{ item.title }}
+                        </a>
+
+                        {% if item.selftext %}
+                        <p class="text-sm text-gray-500 mt-1.5 line-clamp-2">{{ item.selftext }}</p>
+                        {% endif %}
+
+                        <div class="flex items-center gap-4 mt-3 text-xs text-gray-400">
+                            <span><i class="fas fa-arrow-up mr-1 text-green-500"></i> {{ item.score }}</span>
+                            <span><i class="fas fa-comment mr-1 text-blue-400"></i> {{ item.comments }}</span>
+                            {% if item.author %}
+                            <span><i class="fas fa-user mr-1"></i> {{ item.author }}</span>
+                            {% endif %}
+                            {% if item.created %}
+                            <span><i class="fas fa-clock mr-1"></i> {{ item.created }}</span>
+                            {% endif %}
+                            {% if item.tags is defined and item.tags %}
+                            <span><i class="fas fa-tags mr-1"></i> {{ item.tags }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col gap-2 ml-2">
+                        <a href="{{ item.external_url or item.url }}" target="_blank"
+                           class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-all"
+                           title="Kaynağa Git">
+                            <i class="fas fa-external-link-alt text-sm"></i>
+                        </a>
+                        <a href="{{ url_for('index') }}?topic={{ item.title | urlencode }}"
+                           class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-all"
+                           title="Bu Konuda Makale Üret">
+                            <i class="fas fa-wand-magic-sparkles text-sm"></i>
+                        </a>
+                        <a href="{{ item.url }}" target="_blank"
+                           class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                           title="Tartışmayı Gör">
+                            <i class="fas fa-comments text-sm"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if not all_items %}
+            <div class="text-center py-20">
+                <div class="w-20 h-20 rounded-3xl bg-orange-50 flex items-center justify-center text-orange-400 text-4xl mx-auto mb-6">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">İçerik yüklenemedi</h3>
+                <p class="text-gray-500 mb-6">Forum sitelerine bağlanırken bir sorun oluşmuş olabilir. Tekrar deneyin.</p>
+                <a href="{{ url_for('trending') }}"
+                   class="inline-flex items-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                    <i class="fas fa-sync-alt mr-2"></i> Tekrar Dene
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Source-specific tabs -->
+        {% for source_key, source_data in results.items() %}
+        {% if source_data['items'] is defined and source_data['items'] | length > 0 %}
+        <div x-show="tab === '{{ source_key }}'" class="space-y-4">
+            {% for item in source_data['items'] %}
+            <div x-show="search === '' || '{{ item.title | lower | replace("'", "") }}'.includes(search.toLowerCase())"
+                 x-transition
+                 class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-lg shadow-gray-100/50 hover:shadow-xl hover:border-brand-200 transition-all duration-500">
+                <div class="flex items-start gap-4">
+                    <div class="hidden sm:flex flex-col items-center justify-center min-w-[60px] py-2">
+                        <span class="text-2xl font-extrabold bg-gradient-to-b from-brand-500 to-purple-600 bg-clip-text text-transparent">
+                            {% if item.engagement >= 1000 %}{{ (item.engagement / 1000) | round(1) }}k{% else %}{{ item.engagement }}{% endif %}
+                        </span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-wider">Etkileşim</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span class="inline-flex items-center text-xs font-medium {{ item.source_color }}">
+                                <i class="{{ item.source_icon }} mr-1"></i> {{ item.source }}
+                            </span>
+                            {% if item.subreddit %}
+                            <span class="text-xs text-gray-400">{{ item.subreddit }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{{ item.external_url or item.url }}" target="_blank" rel="noopener"
+                           class="text-lg font-bold text-gray-900 hover:text-brand-600 transition-colors line-clamp-2 block">
+                            {{ item.title }}
+                        </a>
+                        {% if item.selftext %}
+                        <p class="text-sm text-gray-500 mt-1.5 line-clamp-2">{{ item.selftext }}</p>
+                        {% endif %}
+                        <div class="flex items-center gap-4 mt-3 text-xs text-gray-400">
+                            <span><i class="fas fa-arrow-up mr-1 text-green-500"></i> {{ item.score }}</span>
+                            <span><i class="fas fa-comment mr-1 text-blue-400"></i> {{ item.comments }}</span>
+                            {% if item.author %}<span><i class="fas fa-user mr-1"></i> {{ item.author }}</span>{% endif %}
+                            {% if item.created %}<span><i class="fas fa-clock mr-1"></i> {{ item.created }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 ml-2">
+                        <a href="{{ item.external_url or item.url }}" target="_blank"
+                           class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-all"
+                           title="Kaynağa Git">
+                            <i class="fas fa-external-link-alt text-sm"></i>
+                        </a>
+                        <a href="{{ url_for('index') }}?topic={{ item.title | urlencode }}"
+                           class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-all"
+                           title="Bu Konuda Makale Üret">
+                            <i class="fas fa-wand-magic-sparkles text-sm"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+    </div>
+</section>
+{% endblock %}

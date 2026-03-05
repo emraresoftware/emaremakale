@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block content %}
+<section class="py-12 lg:py-16">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Shared Article Card -->
+        <div class="rounded-3xl overflow-hidden shadow-2xl border border-gray-100">
+
+            <!-- Header with gradient -->
+            <div class="relative p-8 lg:p-12 text-white"
+                 style="background: linear-gradient(-45deg, #0f0a2e, #1e1b4b, #1e1b4b, #312e81); background-size: 400% 400%; animation: gradient 8s ease infinite;">
+                <div class="absolute inset-0"
+                     style="background-image:
+                        radial-gradient(at 80% 20%, rgba(99,102,241,0.15) 0px, transparent 50%),
+                        radial-gradient(at 20% 80%, rgba(139,92,246,0.1) 0px, transparent 50%);">
+                </div>
+                <div class="relative">
+                    <h1 class="text-3xl lg:text-4xl font-extrabold mb-4 leading-tight">{{ article.title }}</h1>
+                    <div class="flex flex-wrap items-center gap-4 text-brand-200/80 text-sm">
+                        <span><i class="fas fa-tag mr-1"></i> {{ article.topic }}</span>
+                        <span><i class="fas fa-calendar mr-1"></i> {{ article.created_at.strftime('%d.%m.%Y') }}</span>
+                        <span><i class="fas fa-font mr-1"></i> {{ article.word_count }} kelime</span>
+                        <span><i class="fas fa-eye mr-1"></i> {{ article.view_count }} görüntülenme</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="bg-white p-8 lg:p-12">
+                {% if article.keywords %}
+                <div class="flex flex-wrap gap-2 mb-6">
+                    {% for kw in article.keywords.split(',') %}
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-100">
+                        #{{ kw.strip() }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="article-content">
+                    {{ article_html | safe }}
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bg-gray-50 border-t border-gray-100 p-6 lg:p-8">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center">
+                            <span class="text-white font-bold text-xs">M</span>
+                        </div>
+                        <span class="text-sm text-gray-500">Makale Üretici ile oluşturuldu</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="https://twitter.com/intent/tweet?text={{ article.title | urlencode }}&url={{ request.url | urlencode }}"
+                           target="_blank" class="w-9 h-9 rounded-lg bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-all text-xs">
+                            <i class="fab fa-x-twitter"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url | urlencode }}"
+                           target="_blank" class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-all text-xs">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="https://wa.me/?text={{ (article.title ~ ' ' ~ request.url) | urlencode }}"
+                           target="_blank" class="w-9 h-9 rounded-lg bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-all text-xs">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

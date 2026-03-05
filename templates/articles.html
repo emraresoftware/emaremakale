@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Makalelerim — Makale Üretici{% endblock %}
+
+{% block content %}
+<section class="py-12 lg:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+         x-data="{ search: '', filterTone: '', filterStatus: '' }">
+
+        <!-- Header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-10">
+            <div>
+                <h2 class="text-4xl lg:text-5xl font-bold">
+                    <span class="bg-gradient-to-r from-brand-600 via-purple-600 to-violet-600 bg-clip-text text-transparent">Makalelerim</span>
+                </h2>
+                <p class="text-gray-500 mt-2">Oluşturduğunuz tüm makaleler burada.</p>
+            </div>
+            <a href="{{ url_for('index') }}"
+               class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                <i class="fas fa-plus-circle mr-1.5"></i> Yeni Makale
+            </a>
+        </div>
+
+        {% if articles %}
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-lg shadow-gray-100/50 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" placeholder="Makale ara..." x-model="search"
+                           class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-300 text-gray-800 placeholder-gray-400 text-sm">
+                </div>
+                <select x-model="filterTone"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-300 text-gray-800 bg-white text-sm">
+                    <option value="">Tüm Tonlar</option>
+                    <option value="profesyonel">Profesyonel</option>
+                    <option value="samimi">Samimi</option>
+                    <option value="akademik">Akademik</option>
+                    <option value="seo">SEO</option>
+                    <option value="blog">Blog</option>
+                    <option value="haber">Haber</option>
+                </select>
+                <select x-model="filterStatus"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-300 text-gray-800 bg-white text-sm">
+                    <option value="">Tüm Durumlar</option>
+                    <option value="published">Yayında</option>
+                    <option value="draft">Taslak</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Articles Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {% for article in articles %}
+            <div x-show="
+                (search === '' || '{{ article.title | lower }}'.includes(search.toLowerCase()) || '{{ article.topic | lower }}'.includes(search.toLowerCase())) &&
+                (filterTone === '' || '{{ article.tone }}' === filterTone) &&
+                (filterStatus === '' || (filterStatus === 'published' ? {{ 'true' if article.is_published else 'false' }} : !{{ 'true' if article.is_published else 'false' }}))
+            "
+                 x-transition
+                 class="group bg-white rounded-2xl p-6 border border-gray-100 shadow-lg shadow-gray-100/50 hover:shadow-xl hover:border-brand-200 transition-all duration-500">
+
+                <!-- Card Header -->
+                <div class="flex items-start justify-between mb-3">
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-brand-500 to-purple-600 text-white">
+                        {{ article.topic }}
+                    </span>
+                    {% if article.is_published %}
+                    <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <i class="fas fa-globe mr-0.5"></i> Yayında
+                    </span>
+                    {% else %}
+                    <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        <i class="fas fa-file mr-0.5"></i> Taslak
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Title -->
+                <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-brand-600 transition-colors">
+                    <a href="{{ url_for('view_article', article_id=article.id) }}">
+                        {{ article.title }}
+                    </a>
+                </h3>
+
+                <!-- Preview -->
+                <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
+                    {{ article.content[:150] }}...
+                </p>
+
+                <!-- Card Footer -->
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div class="flex items-center gap-3 text-xs text-gray-400">
+                        <span><i class="fas fa-calendar mr-1"></i> {{ article.created_at.strftime('%d.%m.%Y') }}</span>
+                        <span><i class="fas fa-font mr-1"></i> {{ article.word_count }} kelime</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('view_article', article_id=article.id) }}"
+                           class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-all"
+                           title="Görüntüle">
+                            <i class="fas fa-eye text-sm"></i>
+                        </a>
+                        <form action="{{ url_for('delete_article', article_id=article.id) }}" method="POST" class="inline"
+                              onsubmit="return confirm('Bu makaleyi silmek istediğinize emin misiniz?')">
+                            <button type="submit"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                                    title="Sil">
+                                <i class="fas fa-trash-alt text-sm"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Stats -->
+        <div class="mt-10 bg-white rounded-2xl p-6 border border-gray-100 shadow-lg shadow-gray-100/50">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div>
+                    <div class="text-3xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">{{ articles | length }}</div>
+                    <div class="text-sm text-gray-500 mt-1">Toplam Makale</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">{{ articles | selectattr('is_published') | list | length }}</div>
+                    <div class="text-sm text-gray-500 mt-1">Yayındaki</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">{{ articles | sum(attribute='word_count') }}</div>
+                    <div class="text-sm text-gray-500 mt-1">Toplam Kelime</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-extrabold bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">{{ articles | sum(attribute='view_count') }}</div>
+                    <div class="text-sm text-gray-500 mt-1">Görüntülenme</div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-20">
+            <div class="w-20 h-20 rounded-3xl bg-brand-50 flex items-center justify-center text-brand-400 text-4xl mx-auto mb-6">
+                <i class="fas fa-newspaper"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-3">Henüz makale yok</h3>
+            <p class="text-gray-500 mb-8 max-w-md mx-auto">İlk makalenizi oluşturmak için aşağıdaki butona tıklayın.</p>
+            <a href="{{ url_for('index') }}"
+               class="inline-flex items-center px-8 py-4 rounded-2xl text-lg font-semibold text-white bg-gradient-to-r from-brand-500 to-purple-600 shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 transition-all duration-300">
+                <i class="fas fa-plus-circle mr-2"></i> İlk Makalenizi Oluşturun
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
