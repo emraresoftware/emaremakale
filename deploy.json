@@ -1,0 +1,22 @@
+{
+  "slug": "Emaremakale",
+  "name": "Emare Makale",
+  "github_repo": "emraresoftware/emaremakale",
+  "branch": "main",
+  "dc": "local",
+  "server_host": null,
+  "server_ssh_port": 22,
+  "remote_path": "/opt/emaremakale",
+  "stack": "node-pm2",
+  "port": 8302,
+  "domain": "",
+  "deploy_commands": [
+    "cd /opt/emaremakale",
+    "git pull origin main",
+    "npm ci --silent",
+    "pm2 restart Emaremakale || pm2 start ecosystem.config.js"
+  ],
+  "restart_command": "pm2 status Emaremakale",
+  "auto_deploy_on_push": false,
+  "health_check_url": null
+}
