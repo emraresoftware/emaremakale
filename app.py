@@ -19,6 +19,13 @@ from auth import login_required, admin_required, editor_or_admin_required
 
 # Flask uygulaması oluştur
 app = Flask(__name__)
+
+# === Emare Feedback ===
+from feedback_bp import feedback_bp, FeedbackMsg
+app.register_blueprint(feedback_bp)
+# FeedbackMsg tablosunu oluşturmak için: with app.app_context(): db.create_all()
+# ======================
+
 app.config.from_object(Config)
 
 # Veritabanı başlat
